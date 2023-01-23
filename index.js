@@ -1,6 +1,7 @@
 const http = require('http');
 const { handleReqRes } = require('./helpers/handleReqRes');
 const environment = require('./helpers/environments');
+// eslint-disable-next-line no-unused-vars
 const data = require('./lib/data');
 
 const app = {};
@@ -17,9 +18,9 @@ const app = {};
 //     console.log(err, result);
 // });
 
-data.delete('test', 'newFile', (err) => {
-    console.log('Error: ', err);
-});
+// data.delete('test', 'newFile', (err) => {
+//     console.log('Error: ', err);
+// });
 app.config = {};
 
 app.createServer = () => {
