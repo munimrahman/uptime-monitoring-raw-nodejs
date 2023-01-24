@@ -75,7 +75,6 @@ handler._token.get = (requestProperties, callback) => {
         // find the token
         data.read('tokens', tokenId, (err, result) => {
             const token = { ...parseJSON(result) };
-            console.log(token);
             if (!err && token) {
                 callback(200, token);
             } else {
@@ -99,7 +98,6 @@ handler._token.put = (requestProperties, callback) => {
     const extend = !!(
         typeof requestProperties.body.extend === 'boolean' && requestProperties.body.extend === true
     );
-    // console.log(tokenId, extend);
     if (tokenId && extend) {
         // find the token
         data.read('tokens', tokenId, (err, tokenData) => {
@@ -110,7 +108,6 @@ handler._token.put = (requestProperties, callback) => {
                 data.update('tokens', tokenId, token, (err2) => {
                     if (!err2) {
                         callback(200, token);
-                        // console.log('Token updated');
                     } else {
                         callback(500, {
                             message: 'Internal Server Error',
@@ -159,6 +156,23 @@ handler._token.delete = (requestProperties, callback) => {
             message: 'Invalid Token Number',
         });
     }
+};
+
+handler._token.verify = (tokenID, phone, callback) => {
+    data.read('tokens', tokenID, (err, tokenData) => {
+        const token = {
+            ...parseJSON(tokenData),
+        };
+        if (!err && tokenData) {
+            if (token.phone === phone && token.expiresIn > Date.now()) {
+                callback(true);
+            } else {
+                callback(false);
+            }
+        } else {
+            callback(false);
+        }
+    });
 };
 
 module.exports = handler;

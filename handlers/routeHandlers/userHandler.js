@@ -2,6 +2,7 @@
 /* eslint-disable no-underscore-dangle */
 const data = require('../../lib/data');
 const { hash, parseJSON } = require('../../helpers/utilites');
+const tokenHandler = require('./tokenHandler');
 
 const handler = {};
 
@@ -46,7 +47,7 @@ handler._users.post = (requestProperties, callback) => {
         requestProperties.body.tosAgreement
             ? requestProperties.body.tosAgreement
             : false;
-    // console.log(firstName, lastName, phone, password, tosAgreement);
+
     if (firstName && lastName && phone && password && tosAgreement) {
         data.read('users', phone, (err) => {
             if (err) {
@@ -88,14 +89,27 @@ handler._users.get = (requestProperties, callback) => {
             ? requestProperties.queryString.phone
             : false;
     if (phone) {
-        // find the user
-        data.read('users', phone, (err, result) => {
-            const user = { ...parseJSON(result) };
-            if (!err && user) {
-                delete user.password;
-                callback(200, user);
+        // verify token
+        const token =
+            typeof requestProperties.headersObject.token === 'string'
+                ? requestProperties.headersObject.token
+                : false;
+        tokenHandler._token.verify(token, phone, (verifyToken) => {
+            if (verifyToken) {
+                // find the user
+                data.read('users', phone, (err, result) => {
+                    const user = { ...parseJSON(result) };
+                    if (!err && user) {
+                        delete user.password;
+                        callback(200, user);
+                    } else {
+                        callback(404, { message: 'User not found' });
+                    }
+                });
             } else {
-                callback(404, { message: 'User not found' });
+                callback(403, {
+                    message: 'You are not authorized to access.',
+                });
             }
         });
     } else {
@@ -128,26 +142,40 @@ handler._users.put = (requestProperties, callback) => {
             ? requestProperties.body.password
             : false;
     if (phone) {
-        if (firstName || lastName || password) {
-            data.read('users', phone, (err, result) => {
-                const user = { ...parseJSON(result) };
-                if (!err && result) {
-                    if (firstName) {
-                        user.firstName = firstName;
-                    }
-                    if (lastName) {
-                        user.lastName = lastName;
-                    }
-                    if (firstName) {
-                        user.password = hash(password);
-                    }
-                    data.update('users', phone, user, (error) => {
-                        if (!error) {
-                            callback(200, {
-                                message: 'User updated successfully',
+        // verify token
+        const token =
+            typeof requestProperties.headersObject.token === 'string'
+                ? requestProperties.headersObject.token
+                : false;
+        tokenHandler._token.verify(token, phone, (verifyToken) => {
+            if (verifyToken) {
+                // main process
+                if (firstName || lastName || password) {
+                    data.read('users', phone, (err, result) => {
+                        const user = { ...parseJSON(result) };
+                        if (!err && result) {
+                            if (firstName) {
+                                user.firstName = firstName;
+                            }
+                            if (lastName) {
+                                user.lastName = lastName;
+                            }
+                            if (firstName) {
+                                user.password = hash(password);
+                            }
+                            data.update('users', phone, user, (error) => {
+                                if (!error) {
+                                    callback(200, {
+                                        message: 'User updated successfully',
+                                    });
+                                } else {
+                                    callback(500, { message: 'Internal Server Error' });
+                                }
                             });
                         } else {
-                            callback(500, { message: 'Internal Server Error' });
+                            callback(400, {
+                                message: 'You have a problem in your request.',
+                            });
                         }
                     });
                 } else {
@@ -155,12 +183,12 @@ handler._users.put = (requestProperties, callback) => {
                         message: 'You have a problem in your request.',
                     });
                 }
-            });
-        } else {
-            callback(400, {
-                message: 'You have a problem in your request.',
-            });
-        }
+            } else {
+                callback(403, {
+                    message: 'You are not authorized to access.',
+                });
+            }
+        });
     } else {
         callback(400, {
             message: 'Invalid Phone Number',
@@ -175,21 +203,35 @@ handler._users.delete = (requestProperties, callback) => {
             ? requestProperties.queryString.phone
             : false;
     if (phone) {
-        data.read('users', phone, (error, result) => {
-            if (!error && result) {
-                data.delete('users', phone, (err) => {
-                    if (!err) {
-                        callback(200, {
-                            message: 'User deleted successfully',
+        // verify token
+        const token =
+            typeof requestProperties.headersObject.token === 'string'
+                ? requestProperties.headersObject.token
+                : false;
+        tokenHandler._token.verify(token, phone, (verifyToken) => {
+            if (verifyToken) {
+                // main process
+                data.read('users', phone, (error, result) => {
+                    if (!error && result) {
+                        data.delete('users', phone, (err) => {
+                            if (!err) {
+                                callback(200, {
+                                    message: 'User deleted successfully',
+                                });
+                            } else {
+                                callback(500, {
+                                    message: 'Internal Server Error',
+                                });
+                            }
                         });
                     } else {
-                        callback(500, {
-                            message: 'Internal Server Error',
-                        });
+                        callback(500, { message: 'Internal Server Error' });
                     }
                 });
             } else {
-                callback(500, { message: 'Internal Server Error' });
+                callback(403, {
+                    message: 'You are not authorized to access.',
+                });
             }
         });
     } else {

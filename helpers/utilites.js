@@ -5,7 +5,7 @@ const utilities = {};
 
 utilities.parseJSON = (jsonString) => {
     let output = {};
-    console.log(jsonString);
+
     try {
         output = JSON.parse(jsonString);
     } catch (error) {
