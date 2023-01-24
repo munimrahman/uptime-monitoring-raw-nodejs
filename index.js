@@ -1,6 +1,8 @@
 const http = require('http');
 const { handleReqRes } = require('./helpers/handleReqRes');
 const environment = require('./helpers/environments');
+const { sendTwilioSms } = require('./helpers/notifications');
+
 // eslint-disable-next-line no-unused-vars
 const data = require('./lib/data');
 
@@ -21,6 +23,10 @@ const app = {};
 // data.delete('test', 'newFile', (err) => {
 //     console.log('Error: ', err);
 // });
+// sendTwilioSms('01929645146', 'Hello World', (err) => {
+//     console.log('Error: ', err);
+// });
+
 app.config = {};
 
 app.createServer = () => {
